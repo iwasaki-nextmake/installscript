@@ -106,27 +106,48 @@ try {
             $privateScriptContent = Invoke-RestMethod -Uri "https://api.github.com/repos/$($RepoOwner)/$($RepoName)/contents/$($PrivateScriptPath)?ref=$($RepoBranch)" -Headers $headers
             $validCredentials = $true
 
-            # Save/update in .env
+            # Save/update in .env safely
             if (Test-Path $envFile) {
                 $content = Get-Content -Path $envFile
-                if ($content -match "GHCR_TOKEN=") {
-                    $content = $content -replace '^GHCR_TOKEN=.*', "GHCR_TOKEN=`"$existingGhcrToken`""
-                    Set-Content -Path $envFile -Value $content
-                } else {
-                    $content += "`nGHCR_TOKEN=`"$existingGhcrToken`""
-                    Set-Content -Path $envFile -Value $content
+                $hasToken = $false
+                $newContent = @()
+                foreach ($line in $content) {
+                    if ($line -match "^\s*GHCR_TOKEN\s*=") {
+                        $newContent += "GHCR_TOKEN=`"$existingGhcrToken`""
+                        $hasToken = $true
+                    } else {
+                        $newContent += $line
+                    }
                 }
+                if (-not $hasToken) {
+                    $newContent += "GHCR_TOKEN=`"$existingGhcrToken`""
+                }
+                Set-Content -Path $envFile -Value $newContent
             } else {
                 Set-Content -Path $envFile -Value "GHCR_TOKEN=`"$existingGhcrToken`""
             }
             Write-Host "Saved verified GHCR credentials to $envFile" -ForegroundColor Green
         } catch {
-            Write-Host "ERROR: Credentials invalid or failed download setup.ps1: $_" -ForegroundColor Red
-            Write-Host "Clearing credentials and trying again..." -ForegroundColor Yellow
-            $existingGhcrToken = ""
-            if (Test-Path $envFile) {
-                $content = Get-Content -Path $envFile | Where-Object { $_ -notmatch "^\s*GHCR_TOKEN\s*=" }
-                Set-Content -Path $envFile -Value $content
+            $isAuthError = $false
+            if ($null -ne $_.Exception.Response) {
+                $statusCode = [int]$_.Exception.Response.StatusCode
+                if ($statusCode -eq 401 -or $statusCode -eq 403) {
+                    $isAuthError = $true
+                }
+            }
+
+            if ($isAuthError) {
+                Write-Host "ERROR: Credentials invalid (Unauthorized/Forbidden)." -ForegroundColor Red
+                Write-Host "Clearing credentials and trying again..." -ForegroundColor Yellow
+                $existingGhcrToken = ""
+                if (Test-Path $envFile) {
+                    $content = Get-Content -Path $envFile | Where-Object { $_ -notmatch "^\s*GHCR_TOKEN\s*=" }
+                    Set-Content -Path $envFile -Value $content
+                }
+            } else {
+                Write-Host "ERROR: Network or GitHub API error: $_" -ForegroundColor Red
+                Write-Host "Check connection. Retrying in 3 seconds..." -ForegroundColor Yellow
+                Start-Sleep -Seconds 3
             }
         }
     }
