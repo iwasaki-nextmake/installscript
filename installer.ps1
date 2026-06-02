@@ -3,11 +3,11 @@
 # ============================================================
 #  USER CONFIGURABLE VARIABLES
 # ============================================================
-$global:PublicScriptUrl = "https://raw.githubusercontent.com/Pascaruuu/installscript/main/installer.ps1"
-$RepoOwner              = "Pascaruuu"
+$global:PublicScriptUrl = "https://raw.githubusercontent.com/iwasaki-nextmake/installscript/main/installer.ps1"
+$RepoOwner              = "iwasaki-nextmake"
 $RepoName               = "Invoice-recording-system"
 $PrivateScriptPath      = "scripts/setup.ps1"
-$RepoBranch             = "6-prototype"
+$RepoBranch             = "main"
 # ============================================================
 
 # --- Self-Elevation Check via EncodedCommand ---
