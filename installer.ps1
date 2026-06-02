@@ -7,7 +7,7 @@ $global:PublicScriptUrl = "https://raw.githubusercontent.com/iwasaki-nextmake/in
 $RepoOwner              = "iwasaki-nextmake"
 $RepoName               = "Invoice-recording-system"
 $PrivateScriptPath      = "scripts/setup.ps1"
-$RepoBranch             = "395-fix-inconsistent-docker-startup"
+$RepoBranch             = "main"
 # ============================================================
 
 # --- Self-Elevation Check via EncodedCommand ---
